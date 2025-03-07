@@ -1052,7 +1052,7 @@ class NNAPIOpBuilder {
           context_, FinalizeAddOperation(ANEURALNETWORKS_MUL, lite_node_index));
       */
       TF_LITE_ENSURE_OK(
-          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_MUL, lite_node_index, __func__, __LINE__));
+          context_, FinalizeAddOperationOriginal(ANEURALNETWORKS_MUL, lite_node_index, __func__, __LINE__));
     }
 
     // Stage2 : s2 = x / 2
@@ -1082,7 +1082,7 @@ class NNAPIOpBuilder {
           context_, FinalizeAddOperation(ANEURALNETWORKS_MUL, lite_node_index));
       */
       TF_LITE_ENSURE_OK(
-          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_MUL, lite_node_index, __func__, __LINE__));
+          context_, FinalizeAddOperationOriginal(ANEURALNETWORKS_MUL, lite_node_index, __func__, __LINE__));
     }
 
     // Stage 3 : s3 = s1 * s2
@@ -1118,7 +1118,7 @@ class NNAPIOpBuilder {
           context_, FinalizeAddOperation(ANEURALNETWORKS_MUL, lite_node_index));
       */
       TF_LITE_ENSURE_OK(
-          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_MUL, lite_node_index, __func__, __LINE__));
+          context_, FinalizeAddOperationOriginal(ANEURALNETWORKS_MUL, lite_node_index, __func__, __LINE__));
     }
 
     // Stage 4: y = s3 + s2
@@ -1136,7 +1136,7 @@ class NNAPIOpBuilder {
           context_, FinalizeAddOperation(ANEURALNETWORKS_ADD, lite_node_index));
       */
       TF_LITE_ENSURE_OK(
-          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_ADD, lite_node_index, __func__, __LINE__));
+          context_, FinalizeAddOperationOriginal(ANEURALNETWORKS_ADD, lite_node_index, __func__, __LINE__));
     }
 
     return kTfLiteOk;
@@ -1222,7 +1222,7 @@ class NNAPIOpBuilder {
         FinalizeAddOperation(ANEURALNETWORKS_RESHAPE, lite_node_index));
     */
     TF_LITE_ENSURE_STATUS(
-        FinalizeAddOperationCustom(ANEURALNETWORKS_RESHAPE, lite_node_index, __func__, __LINE__));
+        FinalizeAddOperationOriginal(ANEURALNETWORKS_RESHAPE, lite_node_index, __func__, __LINE__));
     return kTfLiteOk;
   }
 
@@ -1254,7 +1254,7 @@ class NNAPIOpBuilder {
         FinalizeAddOperation(ANEURALNETWORKS_ADD, lite_node_index));
     */
     TF_LITE_ENSURE_STATUS(
-        FinalizeAddOperationCustom(ANEURALNETWORKS_ADD, lite_node_index, __func__, __LINE__));
+        FinalizeAddOperationOriginal(ANEURALNETWORKS_ADD, lite_node_index, __func__, __LINE__));
     return kTfLiteOk;
   }
 
@@ -1300,7 +1300,7 @@ class NNAPIOpBuilder {
         FinalizeAddOperation(ANEURALNETWORKS_CONCATENATION, lite_node_index));
     */
     TF_LITE_ENSURE_STATUS(
-        FinalizeAddOperationCustom(ANEURALNETWORKS_CONCATENATION, lite_node_index, __func__, __LINE__));
+        FinalizeAddOperationOriginal(ANEURALNETWORKS_CONCATENATION, lite_node_index, __func__, __LINE__));
 
     // Reshape the output tensor
     TF_LITE_ENSURE_STATUS(AppendReshape(
@@ -1355,7 +1355,7 @@ class NNAPIOpBuilder {
         FinalizeAddOperation(ANEURALNETWORKS_RESHAPE, lite_node_index));
     */
     TF_LITE_ENSURE_STATUS(
-        FinalizeAddOperationCustom(ANEURALNETWORKS_RESHAPE, lite_node_index, __func__, __LINE__));
+        FinalizeAddOperationOriginal(ANEURALNETWORKS_RESHAPE, lite_node_index, __func__, __LINE__));
 
     // Step 2: SPLIT
     augmented_inputs_.push_back(reshape_output_ann_index);
@@ -1373,7 +1373,7 @@ class NNAPIOpBuilder {
         FinalizeAddOperation(ANEURALNETWORKS_SPLIT, lite_node_index));
     */
     TF_LITE_ENSURE_STATUS(
-        FinalizeAddOperationCustom(ANEURALNETWORKS_SPLIT, lite_node_index, __func__, __LINE__));
+        FinalizeAddOperationOriginal(ANEURALNETWORKS_SPLIT, lite_node_index, __func__, __LINE__));
     return kTfLiteOk;
   }
 
@@ -1436,7 +1436,7 @@ class NNAPIOpBuilder {
           FinalizeAddOperation(ANEURALNETWORKS_SLICE, lite_node_index));
       */
       TF_LITE_ENSURE_STATUS(
-          FinalizeAddOperationCustom(ANEURALNETWORKS_SLICE, lite_node_index, __func__, __LINE__));
+          FinalizeAddOperationOriginal(ANEURALNETWORKS_SLICE, lite_node_index, __func__, __LINE__));
     }
     return kTfLiteOk;
   }
@@ -1504,7 +1504,7 @@ class NNAPIOpBuilder {
           context_, FinalizeAddOperation(ANEURALNETWORKS_SUB, lite_node_index));
       */
       TF_LITE_ENSURE_OK(
-          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_SUB, lite_node_index, __func__, __LINE__));
+          context_, FinalizeAddOperationOriginal(ANEURALNETWORKS_SUB, lite_node_index, __func__, __LINE__));
     }
 
     // Stage2 : out = diff * diff
@@ -1523,7 +1523,7 @@ class NNAPIOpBuilder {
           context_, FinalizeAddOperation(ANEURALNETWORKS_MUL, lite_node_index));
       */
       TF_LITE_ENSURE_OK(
-          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_MUL, lite_node_index, __func__, __LINE__));
+          context_, FinalizeAddOperationOriginal(ANEURALNETWORKS_MUL, lite_node_index, __func__, __LINE__));
     }
 
     return kTfLiteOk;
@@ -1569,7 +1569,7 @@ class NNAPIOpBuilder {
           context_, FinalizeAddOperation(ANEURALNETWORKS_SUB, lite_node_index));
       */
       TF_LITE_ENSURE_OK(
-          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_SUB, lite_node_index, __func__, __LINE__));
+          context_, FinalizeAddOperationOriginal(ANEURALNETWORKS_SUB, lite_node_index, __func__, __LINE__));
     }
 
     // stage 2: $sin(\frac{\pi}{2} - x)$
@@ -1585,15 +1585,14 @@ class NNAPIOpBuilder {
           context_, FinalizeAddOperation(ANEURALNETWORKS_SIN, lite_node_index));
       */
       TF_LITE_ENSURE_OK(
-          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_SIN, lite_node_index, __func__, __LINE__));
+          context_, FinalizeAddOperationOriginal(ANEURALNETWORKS_SIN, lite_node_index, __func__, __LINE__));
     }
 
     return kTfLiteOk;
   }
 
   // Finish emitting the op (of type `type`) into the NN API.
-  /*
-  TfLiteStatus FinalizeAddOperation(ANeuralNetworksOperationType type,
+  TfLiteStatus FinalizeAddOperationOriginal(ANeuralNetworksOperationType type,
                                     int lite_node_index) {
     // Actually add a NN API operation
     TF_LITE_ENSURE_OK(context_,
@@ -1606,7 +1605,6 @@ class NNAPIOpBuilder {
     augmented_outputs_.clear();
     return kTfLiteOk;
   }
-  */
 
   // Custom function
   // Author: Park Joonyoung 20250304
@@ -5872,7 +5870,7 @@ TfLiteStatus NNAPIDelegateKernel::AddOpsAndTensors(
       // debug
       // Author: Park Joonyoung 20250304
       // builder.FinalizeAddOperation(quant8_full_lstm_op_code, node_index);
-      builder.FinalizeAddOperationCustom(quant8_full_lstm_op_code, node_index, __func__, __LINE__);
+      builder.FinalizeAddOperationOriginal(quant8_full_lstm_op_code, node_index, __func__, __LINE__);
       continue;
     }
 
@@ -6361,7 +6359,7 @@ TfLiteStatus NNAPIDelegateKernel::AddOpsAndTensors(
                       builder.FinalizeAddOperation(nn_op_type, node_index));
     */
     TF_LITE_ENSURE_OK(context_,
-                      builder.FinalizeAddOperationCustom(nn_op_type, node_index, __func__, __LINE__));
+                      builder.FinalizeAddOperationOriginal(nn_op_type, node_index, __func__, __LINE__));
     if (fc_nn_intermediate_output_index > -1) {
       TF_LITE_ENSURE_STATUS(builder.AppendReshape(
           fc_nn_intermediate_output_index, node->outputs->data[0], node_index));
