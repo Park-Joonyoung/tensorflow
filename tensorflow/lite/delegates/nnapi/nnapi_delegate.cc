@@ -1045,8 +1045,14 @@ class NNAPIOpBuilder {
               tensor.dims->size, reinterpret_cast<uint32_t*>(tensor.dims->data),
               nn_type, s1_output_scale, s1_output_zero_point,
               &s1_out_ann_index));
+      // debug
+      // Author: Park Joonyoung 20250304
+      /*
       TF_LITE_ENSURE_OK(
           context_, FinalizeAddOperation(ANEURALNETWORKS_MUL, lite_node_index));
+      */
+      TF_LITE_ENSURE_OK(
+          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_MUL, lite_node_index, __func__, __LINE__));
     }
 
     // Stage2 : s2 = x / 2
@@ -1069,8 +1075,14 @@ class NNAPIOpBuilder {
               tensor.dims->size, reinterpret_cast<uint32_t*>(tensor.dims->data),
               nn_type, s2_output_scale, s2_output_zero_point,
               &s2_out_ann_index));
+      // debug
+      // Author: Park Joonyoung 20250304
+      /*
       TF_LITE_ENSURE_OK(
           context_, FinalizeAddOperation(ANEURALNETWORKS_MUL, lite_node_index));
+      */
+      TF_LITE_ENSURE_OK(
+          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_MUL, lite_node_index, __func__, __LINE__));
     }
 
     // Stage 3 : s3 = s1 * s2
@@ -1099,8 +1111,14 @@ class NNAPIOpBuilder {
               tensor.dims->size, reinterpret_cast<uint32_t*>(tensor.dims->data),
               nn_type, s3_output_scale, s3_output_zero_point,
               &s3_out_ann_index));
+      // debug
+      // Author: Park Joonyoung 20250304
+      /*
       TF_LITE_ENSURE_OK(
           context_, FinalizeAddOperation(ANEURALNETWORKS_MUL, lite_node_index));
+      */
+      TF_LITE_ENSURE_OK(
+          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_MUL, lite_node_index, __func__, __LINE__));
     }
 
     // Stage 4: y = s3 + s2
@@ -1111,8 +1129,14 @@ class NNAPIOpBuilder {
                         AddScalarInt32Operand(ANEURALNETWORKS_FUSED_NONE));
       TF_LITE_ENSURE_OK(context_,
                         AddTensorOutput(lite_output_index, tensor_flags));
+      // debug
+      // Author: Park Joonyoung 20250304
+      /*
       TF_LITE_ENSURE_OK(
           context_, FinalizeAddOperation(ANEURALNETWORKS_ADD, lite_node_index));
+      */
+      TF_LITE_ENSURE_OK(
+          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_ADD, lite_node_index, __func__, __LINE__));
     }
 
     return kTfLiteOk;
@@ -1191,8 +1215,14 @@ class NNAPIOpBuilder {
     TF_LITE_ENSURE_OK(context_,
                       AddTensorOutput(lite_out_tensor_index,
                                       NN_TENSOR_FLAG_USE_INT8_ASYMM_SIGNED));
+    // debug
+    // Author: Park Joonyoung 20250304
+    /*
     TF_LITE_ENSURE_STATUS(
         FinalizeAddOperation(ANEURALNETWORKS_RESHAPE, lite_node_index));
+    */
+    TF_LITE_ENSURE_STATUS(
+        FinalizeAddOperationCustom(ANEURALNETWORKS_RESHAPE, lite_node_index, __func__, __LINE__));
     return kTfLiteOk;
   }
 
@@ -1217,8 +1247,14 @@ class NNAPIOpBuilder {
 
     TF_LITE_ENSURE_STATUS(AddScalarInt32Operand(ANEURALNETWORKS_FUSED_NONE));
     TF_LITE_ENSURE_STATUS(AddTensorOutput(lite_out_tensor_index, tensor_flags));
+    // debug
+    // Author: Park Joonyoung 20250304
+    /*
     TF_LITE_ENSURE_STATUS(
         FinalizeAddOperation(ANEURALNETWORKS_ADD, lite_node_index));
+    */
+    TF_LITE_ENSURE_STATUS(
+        FinalizeAddOperationCustom(ANEURALNETWORKS_ADD, lite_node_index, __func__, __LINE__));
     return kTfLiteOk;
   }
 
@@ -1257,8 +1293,14 @@ class NNAPIOpBuilder {
         input_tensor.type, concat_output_shape.size(),
         concat_output_shape.data(), input_tensor.params.scale,
         input_tensor.params.zero_point, &concat_output_ann_index));
+    // debug
+    // Author: Park Joonyoung 20250304
+    /*
     TF_LITE_ENSURE_STATUS(
         FinalizeAddOperation(ANEURALNETWORKS_CONCATENATION, lite_node_index));
+    */
+    TF_LITE_ENSURE_STATUS(
+        FinalizeAddOperationCustom(ANEURALNETWORKS_CONCATENATION, lite_node_index, __func__, __LINE__));
 
     // Reshape the output tensor
     TF_LITE_ENSURE_STATUS(AppendReshape(
@@ -1306,8 +1348,14 @@ class NNAPIOpBuilder {
         input_tensor.type, intermediate_shape.size(),
         reinterpret_cast<uint32_t*>(intermediate_shape.data()), scale,
         input_tensor.params.zero_point, &reshape_output_ann_index));
+    // debug
+    // Author: Park Joonyoung 20250304
+    /*
     TF_LITE_ENSURE_STATUS(
         FinalizeAddOperation(ANEURALNETWORKS_RESHAPE, lite_node_index));
+    */
+    TF_LITE_ENSURE_STATUS(
+        FinalizeAddOperationCustom(ANEURALNETWORKS_RESHAPE, lite_node_index, __func__, __LINE__));
 
     // Step 2: SPLIT
     augmented_inputs_.push_back(reshape_output_ann_index);
@@ -1318,8 +1366,14 @@ class NNAPIOpBuilder {
       TF_LITE_ENSURE_STATUS(AddTensorOutput(
           lite_output_index, NN_TENSOR_FLAG_USE_INT8_ASYMM_SIGNED));
     }
+    // debug
+    // Author: Park Joonyoung 20250304
+    /*
     TF_LITE_ENSURE_STATUS(
         FinalizeAddOperation(ANEURALNETWORKS_SPLIT, lite_node_index));
+    */
+    TF_LITE_ENSURE_STATUS(
+        FinalizeAddOperationCustom(ANEURALNETWORKS_SPLIT, lite_node_index, __func__, __LINE__));
     return kTfLiteOk;
   }
 
@@ -1375,8 +1429,14 @@ class NNAPIOpBuilder {
       TF_LITE_ENSURE_STATUS(AddTensorOutput(
           lite_output_index, NN_TENSOR_FLAG_USE_INT8_ASYMM_SIGNED));
 
+      // debug
+      // Author: Park Joonyoung 20250304
+      /*
       TF_LITE_ENSURE_STATUS(
           FinalizeAddOperation(ANEURALNETWORKS_SLICE, lite_node_index));
+      */
+      TF_LITE_ENSURE_STATUS(
+          FinalizeAddOperationCustom(ANEURALNETWORKS_SLICE, lite_node_index, __func__, __LINE__));
     }
     return kTfLiteOk;
   }
@@ -1437,8 +1497,14 @@ class NNAPIOpBuilder {
               output.dims->size, reinterpret_cast<uint32_t*>(output.dims->data),
               diff_output_nn_type, diff_output_scale, diff_output_zero_point,
               &diff_out_ann_index));
+      // debug
+      // Author: Park Joonyoung 20250304
+      /*
       TF_LITE_ENSURE_OK(
           context_, FinalizeAddOperation(ANEURALNETWORKS_SUB, lite_node_index));
+      */
+      TF_LITE_ENSURE_OK(
+          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_SUB, lite_node_index, __func__, __LINE__));
     }
 
     // Stage2 : out = diff * diff
@@ -1450,8 +1516,14 @@ class NNAPIOpBuilder {
       TF_LITE_ENSURE_OK(context_,
                         AddTensorOutput(node->outputs->data[0],
                                         NN_TENSOR_FLAG_USE_INT8_ASYMM_SIGNED));
+      // debug
+      // Author: Park Joonyoung 20250304
+      /*
       TF_LITE_ENSURE_OK(
           context_, FinalizeAddOperation(ANEURALNETWORKS_MUL, lite_node_index));
+      */
+      TF_LITE_ENSURE_OK(
+          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_MUL, lite_node_index, __func__, __LINE__));
     }
 
     return kTfLiteOk;
@@ -1490,8 +1562,14 @@ class NNAPIOpBuilder {
               output.dims->size, reinterpret_cast<uint32_t*>(output.dims->data),
               ANEURALNETWORKS_TENSOR_FLOAT32, 0, 0, &diff_out_ann_index));
 
+      // debug
+      // Author: Park Joonyoung 20250304
+      /*
       TF_LITE_ENSURE_OK(
           context_, FinalizeAddOperation(ANEURALNETWORKS_SUB, lite_node_index));
+      */
+      TF_LITE_ENSURE_OK(
+          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_SUB, lite_node_index, __func__, __LINE__));
     }
 
     // stage 2: $sin(\frac{\pi}{2} - x)$
@@ -1500,14 +1578,21 @@ class NNAPIOpBuilder {
 
       TF_LITE_ENSURE_OK(context_, AddTensorOutput(node->outputs->data[0]));
 
+      // debug
+      // Author: Park Joonyoung 20250304
+      /*
       TF_LITE_ENSURE_OK(
           context_, FinalizeAddOperation(ANEURALNETWORKS_SIN, lite_node_index));
+      */
+      TF_LITE_ENSURE_OK(
+          context_, FinalizeAddOperationCustom(ANEURALNETWORKS_SIN, lite_node_index, __func__, __LINE__));
     }
 
     return kTfLiteOk;
   }
 
   // Finish emitting the op (of type `type`) into the NN API.
+  /*
   TfLiteStatus FinalizeAddOperation(ANeuralNetworksOperationType type,
                                     int lite_node_index) {
     // Actually add a NN API operation
@@ -1520,6 +1605,43 @@ class NNAPIOpBuilder {
     augmented_inputs_.clear();
     augmented_outputs_.clear();
     return kTfLiteOk;
+  }
+  */
+
+  // Custom function
+  // Author: Park Joonyoung 20250304
+  // Prints out the error code and the location where the error occurred.
+  // Finish emitting the op (of type `type`) into the NN API.
+  TfLiteStatus FinalizeAddOperationCustom(ANeuralNetworksOperationType type,
+                                    int lite_node_index, const char* function, int line) {
+    // Actually add a NN API operation
+    int status = AddOperationToModel(
+                                      type, static_cast<uint32_t>(augmented_inputs_.size()),
+                                      augmented_inputs_.data(),
+                                      static_cast<uint32_t>(augmented_outputs_.size()),
+                                      augmented_outputs_.data(), lite_node_index);
+    augmented_inputs_.clear();
+    augmented_outputs_.clear();
+    if (status != kTfLiteOk) {
+      std::string error_desc;
+      switch (status) {
+        // The error descriptions are in https://github.com/tensorflow/tensorflow/blob/f1888ca89063bf2044d7835f589c6005641b0dbc/tensorflow/lite/core/c/c_api_types.h#L71
+        case 1: error_desc = "[kTfLiteError: an error in the runtime]"; break;
+        case 2: error_desc = "[kTfLiteDelegateError: an error from a TfLiteDelegate itself]"; break;
+        case 3: error_desc = "[kTfLiteApplicationError: an error due to incompatibility between runtime and delegate]"; break;
+        case 4: error_desc = "[kTfLiteDelegateDataNotFound: serialized delegate data not being found]"; break;
+        case 5: error_desc = "[kTfLiteDelegateDataWriteError: data-writing issue in delegate serialization]"; break;
+        case 6: error_desc = "[kTfLiteDelegateDataReadError: data-reading issue in delegate serialization]"; break;
+        case 7: error_desc = "[kTfLiteUnresolvedOps: tflite model has operations that can't be resolved at runtime]"; break;
+        case 8: error_desc = "[kTfLiteCancelled: invocation cancelled by the user]"; break;
+        case 9: error_desc = "[kTfLiteOutputShapeNotKnown: the output shape cannot be determined but the size of the output tensor is known]"; break;
+        default: error_desc = "[UNKNOWN: The error code is abnormal]"; break;
+      }
+      printf("Park Joonyoung: Error %s occurred at function %s, line %d.\n", error_desc.c_str(), function, line);
+      printf("node type: %d %d\n", type, lite_node_index);
+    }
+    if (status != kTfLiteOk) return kTfLiteError;
+    else return kTfLiteOk;
   }
 
   TfLiteStatus AddSingleValueTensorAsScalarOperand(int tensor_index,
@@ -5747,7 +5869,10 @@ TfLiteStatus NNAPIDelegateKernel::AddOpsAndTensors(
             output_index, NN_TENSOR_FLAG_USE_INT8_ASYMM_SIGNED));
       }
 
-      builder.FinalizeAddOperation(quant8_full_lstm_op_code, node_index);
+      // debug
+      // Author: Park Joonyoung 20250304
+      // builder.FinalizeAddOperation(quant8_full_lstm_op_code, node_index);
+      builder.FinalizeAddOperationCustom(quant8_full_lstm_op_code, node_index, __func__, __LINE__);
       continue;
     }
 
@@ -6229,8 +6354,14 @@ TfLiteStatus NNAPIDelegateKernel::AddOpsAndTensors(
     AddDequantizeOperatorsWhereNeeded(context, reg->builtin_code, node,
                                       node_index, &builder, nnapi_errno);
 
+    // debug
+    // Author: Park Joonyoung 20250304
+    /*
     TF_LITE_ENSURE_OK(context_,
                       builder.FinalizeAddOperation(nn_op_type, node_index));
+    */
+    TF_LITE_ENSURE_OK(context_,
+                      builder.FinalizeAddOperationCustom(nn_op_type, node_index, __func__, __LINE__));
     if (fc_nn_intermediate_output_index > -1) {
       TF_LITE_ENSURE_STATUS(builder.AppendReshape(
           fc_nn_intermediate_output_index, node->outputs->data[0], node_index));

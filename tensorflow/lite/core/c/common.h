@@ -224,6 +224,7 @@ void TfLiteFloatArrayFree(TfLiteFloatArray* a);
 
 /// Check whether the value `a` is true, and if not return kTfLiteError from
 /// the current function, while also reporting the location of the error.
+/// Original macro
 #define TF_LITE_ENSURE(context, a)                                      \
   do {                                                                  \
     if (!(a)) {                                                         \
@@ -1612,6 +1613,11 @@ TfLiteStatus TfLiteTensorVariantRealloc(TfLiteTensor* t,
   t->allocation_type = kTfLiteVariantObject;
   return kTfLiteOk;
 }
+
+// Custom macro (Author: Park Joonyoung, 250304)
+#define PRINT_CUSTOM_LOG(...) \
+    printf("EXECUTION: [%s: %d][%s]\n", \
+    __FILE__, __LINE__, __func__);
 
 #endif  // __cplusplus
 #endif  // TENSORFLOW_LITE_CORE_C_COMMON_H_
