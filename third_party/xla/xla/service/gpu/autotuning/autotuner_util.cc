@@ -249,6 +249,7 @@ void SerializeAutotuneEntry(AutotuneResults* results, const AutotuneCacheKey& k,
   auto& entry = *results->add_results();
   entry.set_device(std::string(k.GetModelStr()));
   entry.set_hlo(std::string(k.GetHlo()));
+  entry.set_version(k.GetVersion());
   *entry.mutable_result() = *res;
 }
 }  // namespace
@@ -272,7 +273,7 @@ void SerializeAutotuneEntry(AutotuneResults* results, const AutotuneCacheKey& k,
     const AutotuneResults& results, bool allow_override) {
   absl::MutexLock lock(&autotune_cache_mu);
   for (const AutotuneResults::Entry& result : results.results()) {
-    AutotuneCacheKey key(result.device(), result.hlo());
+    AutotuneCacheKey key(result.device(), result.hlo(), result.version());
     if (allow_override) {
       autotune_cache.insert_or_assign(key, result.result());
     } else {
@@ -494,6 +495,7 @@ bool IsTextProtoPath(absl::string_view file_path) {
         kVersion, results.version()));
   }
 
+  AddVersionToAutotuneResults(results);
   TF_RETURN_IF_ERROR(LoadAutotuneResults(results, allow_override));
   return absl::OkStatus();
 }
@@ -566,6 +568,16 @@ bool IsTextProtoPath(absl::string_view file_path) {
 /*static*/ void AutotunerUtil::ClearCacheStats() {
   absl::MutexLock lock(&autotune_cache_mu);
   autotune_cache_stats = CacheStats();
+}
+
+void AddVersionToAutotuneResults(AutotuneResults& results) {
+  for (auto& result : *results.mutable_results()) {
+    if (result.version() == 0) {
+      // Create a dummy key and pull its version if we don't have one specified.
+      AutotuneCacheKey key("foo", "canonical_foo");
+      result.set_version(key.GetVersion());
+    }
+  }
 }
 
 }  // namespace gpu

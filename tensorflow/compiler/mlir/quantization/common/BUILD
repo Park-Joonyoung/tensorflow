@@ -9,6 +9,7 @@ package(
         "//learning/brain/mlir/quantization:__subpackages__",
         "//tensorflow/compiler/mlir/lite:__subpackages__",
         "//tensorflow/compiler/mlir/quantization:__subpackages__",
+        "//tensorflow/compiler/mlir/stablehlo:__subpackages__",
     ],
     licenses = ["notice"],
 )
@@ -120,6 +121,7 @@ cc_library(
         ":func",
         "//tensorflow/compiler/mlir/lite:tensorflow_lite",
         "//tensorflow/compiler/mlir/lite/quantization/ir:QuantOps",
+        "//tensorflow/compiler/mlir/quantization/common/ir:QuantOps",
         "//tensorflow/compiler/mlir/quantization/stablehlo/cc:context",
         "//tensorflow/compiler/mlir/tensorflow",
         "//tensorflow/compiler/mlir/tensorflow:tensorflow_types",

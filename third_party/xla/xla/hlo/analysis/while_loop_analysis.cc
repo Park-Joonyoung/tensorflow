@@ -49,6 +49,7 @@ limitations under the License.
 #include "xla/shape_util.h"
 #include "xla/tools/hlo_extractor.h"
 #include "xla/tsl/platform/status.h"
+#include "xla/xla_data.pb.h"
 
 namespace xla {
 
@@ -635,10 +636,19 @@ optional<Range> MatchTrivialLoopRange(const HloInstruction* while_op) {
 
   // We also need to round the bound down so that the difference between bound
   // and init_value is a multiple of the step size.
-  while_cond_bound_val.value() =
-      (while_cond_bound_val.value() - indvar_init_val.value()) /
-          trip_count_step * trip_count_step +
-      indvar_init_val.value();
+  // We want to round down the expression
+  // (while_cond_bound_val.value() - indvar_init_val.value()) to a multiple of
+  // trip_count_step by adjusting the bound value. We need to be careful not to
+  // run into overflows.
+  int64_t bound_value_remainder =
+      while_cond_bound_val.value() % trip_count_step;
+  int64_t init_value_remainder = indvar_init_val.value() % trip_count_step;
+  int64_t remainder =
+      (bound_value_remainder - init_value_remainder) % trip_count_step;
+  if (remainder < 0) {
+    remainder += trip_count_step;
+  }
+  while_cond_bound_val.value() -= remainder;
 
   const int64_t init_bitwidth =
       primitive_util::BitWidth(indvar_init.shape().element_type());
@@ -689,7 +699,7 @@ optional<int64_t> MatchTrivialLoopTripCount(const HloInstruction* while_op,
   int64_t trip_count_step = 0;
   if (!Match(while_body_indvar_update,
              m::AddAnyOrder(m::Op().Is(while_body_indvar),
-                            m::Op(&trip_count_increase_step_instr)))) {
+                            m::Constant(&trip_count_increase_step_instr)))) {
     if (trip_count_increase_step_instr == nullptr) {
       VLOG(2) << "Pattern-match failed: induction variable is not getting "
                  "updated by an add operation: "

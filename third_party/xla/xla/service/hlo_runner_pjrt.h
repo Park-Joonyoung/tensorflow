@@ -96,6 +96,13 @@ class HloRunnerPjRt : public HloRunnerInterface {
   absl::StatusOr<std::unique_ptr<OpaqueExecutable>> CreateExecutable(
       std::unique_ptr<HloModule> module, bool run_hlo_passes) override;
 
+  // Creates a runner-internal executable object given a runner and
+  // platform-specific serialized executable representation. The serialized
+  // representation must have been produced by a compiler of the same platform
+  // and version as this one.
+  absl::StatusOr<std::unique_ptr<OpaqueExecutable>> DeserializeExecutable(
+      absl::string_view serialized) const override;
+
   absl::StatusOr<Literal> ExecuteWithExecutable(
       OpaqueExecutable* executable, absl::Span<const Literal* const> arguments,
       ExecutionProfile* profile) override;
@@ -144,13 +151,21 @@ class HloRunnerPjRt : public HloRunnerInterface {
   absl::StatusOr<absl::Nonnull<const HloModule*>> HloModuleFromWrapped(
       const OpaqueExecutable* wrapped) const override;
 
+  // Returns true if the two given OpaqueExecutables originate from the same
+  // runner and are equivalent according to some notion specific to that runner.
+  // Executables that were created by different runners can never be equivalent.
+  bool ExecutablesAreEquivalent(
+      absl::Nonnull<const OpaqueExecutable*> lhs,
+      absl::Nonnull<const OpaqueExecutable*> rhs) const override;
+
  private:
   absl::StatusOr<CompileOptions> GenerateDefaultCompileOptions(
       HloModule* module, bool run_hlo_passes);
 
   absl::StatusOr<std::vector<Literal>> ExecuteReplicatedImpl(
-      std::function<absl::StatusOr<std::vector<std::unique_ptr<PjRtBuffer>>>(
-          absl::Span<const std::vector<PjRtBuffer*>>)>
+      std::function<
+          absl::StatusOr<std::vector<std::vector<std::unique_ptr<PjRtBuffer>>>>(
+              absl::Span<const std::vector<PjRtBuffer*>>)>
           execution_helper,
       std::function<int64_t(int64_t)> argument_count_provider,
       std::function<const Literal*(int64_t, int64_t)> argument_provider,

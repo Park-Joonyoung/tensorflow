@@ -529,6 +529,9 @@ cc_library(
         "//tensorflow/dtensor/cc:dtensor_ops",
     ] + select({
         # Non-tpu platforms don't need tpu dependency.
+        # copybara:uncomment_begin(google-only)
+        # "//buildenv/platforms/settings:chrome_linux": [],
+        # copybara:uncomment_end
         "//tensorflow:chromiumos": [],
         "//tensorflow:fuchsia": [],
         "//conditions:default": [
@@ -1014,6 +1017,9 @@ cc_library(
     hdrs = if_mobile(["//tensorflow/core/config:flags_headers_filegroup"]),
     copts = tf_copts(android_optimization_level_override = None) + tf_opts_nortti_if_lite_protos() + if_ios(["-Os"]),
     defines = ["SUPPORT_SELECTIVE_REGISTRATION"] + select({
+                  # copybara:uncomment_begin(google-only)
+                  # "//buildenv/platforms/settings:chrome_linux": ["IS_MOBILE_PLATFORM"],
+                  # copybara:uncomment_end
                   "//tensorflow:chromiumos": ["IS_MOBILE_PLATFORM"],
                   "//tensorflow:fuchsia": ["IS_MOBILE_PLATFORM"],
                   "//conditions:default": [],
@@ -1046,6 +1052,7 @@ cc_library(
 #         "EIGEN_NEON_GEBP_NR=4",
 #     ] + select({
 #         "//tensorflow:chromiumos": ["IS_MOBILE_PLATFORM"],
+#         "//buildenv/platforms/settings:chrome_linux": ["IS_MOBILE_PLATFORM"],
 #         "//tensorflow:fuchsia": ["IS_MOBILE_PLATFORM"],
 #         "//conditions:default": [],
 #     }) + tf_defines_nortti_if_lite_protos() + select({
@@ -1823,6 +1830,12 @@ tf_cuda_library(
         "//tensorflow/core/public:session.h",
     ],
     copts = tf_copts(),
+    visibility = [
+        ":dependency_allowlist",
+        "//learning/gemini/gemax/core/models/gemini3/vision/vision_decoder:__pkg__",
+        "//tensorflow:internal",
+        "//tensorflow_models:__subpackages__",
+    ],
     deps = ["//tensorflow/core/common_runtime:core_cpu_base_no_ops"] + if_static([
         ":function_ops_op_lib",
         ":functional_grad",
@@ -2035,6 +2048,7 @@ filegroup(
         "//tensorflow/core/lib/gif/testdata:gif_testdata",
         # BMP data
         "//tensorflow/core/lib/bmp:bmp_testdata",
+        "//tensorflow/core/lib/webp:testdata",
     ],
     visibility = ["//visibility:public"],
 )

@@ -2539,15 +2539,21 @@ func.func @DontConvertMul1WithBroadcastToIdentity(%arg0: tensor<2xf32>) -> tenso
 }
 
 // CHECK-LABEL: ConvertConstSelectToIdentity
-func.func @ConvertConstSelectToIdentity(%arg0: tensor<1x2x3x4xf32>, %arg1: tensor<1x2x3x4xf32>) -> (tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>) {
+func.func @ConvertConstSelectToIdentity(%arg0: tensor<1x2x3x4xf32>, %arg1: tensor<1x2x3x4xf32>, %arg2: tensor<1x2x3x4xi1>) -> (tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>, tensor<1x2x3x4xi1>, tensor<1x2x3x4xi1>, tensor<1x2x3x4xi1>, tensor<1x2x3x4xi1>) {
   %cst_true = arith.constant dense<true> : tensor<1x2x3x4xi1>
   %cst_false = arith.constant dense<false> : tensor<1x2x3x4xi1>
   %0 = "tfl.select"(%cst_true, %arg0, %arg1) : (tensor<1x2x3x4xi1>, tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>) -> tensor<1x2x3x4xf32>
   %1 = "tfl.select_v2"(%cst_true, %arg0, %arg1) : (tensor<1x2x3x4xi1>, tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>) -> tensor<1x2x3x4xf32>
   %2 = "tfl.select"(%cst_false, %arg0, %arg1) : (tensor<1x2x3x4xi1>, tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>) -> tensor<1x2x3x4xf32>
   %3 = "tfl.select_v2"(%cst_false, %arg0, %arg1) : (tensor<1x2x3x4xi1>, tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>) -> tensor<1x2x3x4xf32>
-  func.return %0, %1, %2, %3 : tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>
-  // CHECK: return %arg0, %arg0, %arg1, %arg1
+  %4 = "tfl.select"(%arg2, %cst_true, %cst_false) : (tensor<1x2x3x4xi1>, tensor<1x2x3x4xi1>, tensor<1x2x3x4xi1>) -> tensor<1x2x3x4xi1>
+  %5 = "tfl.select_v2"(%arg2, %cst_true, %cst_false) : (tensor<1x2x3x4xi1>, tensor<1x2x3x4xi1>, tensor<1x2x3x4xi1>) -> tensor<1x2x3x4xi1>
+  %6 = "tfl.select"(%arg2, %cst_false, %cst_true) : (tensor<1x2x3x4xi1>, tensor<1x2x3x4xi1>, tensor<1x2x3x4xi1>) -> tensor<1x2x3x4xi1>
+  %7 = "tfl.select_v2"(%arg2, %cst_false, %cst_true) : (tensor<1x2x3x4xi1>, tensor<1x2x3x4xi1>, tensor<1x2x3x4xi1>) -> tensor<1x2x3x4xi1>
+  func.return %0, %1, %2, %3, %4, %5, %6, %7 : tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>, tensor<1x2x3x4xf32>, tensor<1x2x3x4xi1>, tensor<1x2x3x4xi1>, tensor<1x2x3x4xi1>, tensor<1x2x3x4xi1>
+  // CHECK: %0 = "tfl.logical_not"(%arg2) : (tensor<1x2x3x4xi1>) -> tensor<1x2x3x4xi1>
+  // CHECK: %1 = "tfl.logical_not"(%arg2) : (tensor<1x2x3x4xi1>) -> tensor<1x2x3x4xi1>
+  // CHECK: return %arg0, %arg0, %arg1, %arg1, %arg2, %arg2, %0, %1
 }
 
 // CHECK-LABEL: DontConvertConstSelectBroadcast
@@ -4530,4 +4536,77 @@ func.func @RealDivWithConstDivisor(%arg0: tensor<2x3xf32>) -> tensor<2x3xf32> {
   // CHECK: %cst = arith.constant dense<2.000000e-01> : tensor<f32>
   // CHECK: %0 = tfl.mul(%arg0, %cst) <{fused_activation_function = "NONE"}> : (tensor<2x3xf32>, tensor<f32>) -> tensor<2x3xf32>
   // CHECK: return %0 : tensor<2x3xf32>
+}
+
+//CHECK-LABEL: @PushTransposeThroughSqueezeNoDims
+func.func @PushTransposeThroughSqueezeNoDims(%arg0: tensor<1x1x2x3xf32>) -> (tensor<3x2xf32>) {
+  %cst = arith.constant dense<[0, 3, 1, 2]> : tensor<4xi32>
+  %0 = "tfl.transpose"(%arg0, %cst) : (tensor<1x1x2x3xf32>, tensor<4xi32>) -> tensor<1x3x1x2xf32>
+  %1 = "tfl.squeeze"(%0): (tensor<1x3x1x2xf32>) -> tensor<3x2xf32>
+  return %1 : tensor<3x2xf32>
+
+  // CHECK: %cst = arith.constant dense<[1, 0]> : tensor<2xi32>
+  // CHECK: %cst_0 = arith.constant dense<[2, 3]> : tensor<2xi32>
+  // CHECK: %0 = "tfl.reshape"(%arg0, %cst_0) : (tensor<1x1x2x3xf32>, tensor<2xi32>) -> tensor<2x3xf32>
+  // CHECK: %1 = "tfl.transpose"(%0, %cst) : (tensor<2x3xf32>, tensor<2xi32>) -> tensor<3x2xf32>
+}
+
+//CHECK-LABEL: @PushTransposeThroughSqueeze1
+func.func @PushTransposeThroughSqueeze1(%arg0: tensor<1x1x2x3xf32>) -> (tensor<3x2xf32>) {
+  %cst = arith.constant dense<[0, 3, 1, 2]> : tensor<4xi32>
+  %0 = "tfl.transpose"(%arg0, %cst) : (tensor<1x1x2x3xf32>, tensor<4xi32>) -> tensor<1x3x1x2xf32>
+  %1 = "tfl.squeeze"(%0) {squeeze_dims = [0, 2]}: (tensor<1x3x1x2xf32>) -> tensor<3x2xf32>
+  return %1 : tensor<3x2xf32>
+
+  // CHECK: %cst = arith.constant dense<[1, 0]> : tensor<2xi32>
+  // CHECK: %cst_0 = arith.constant dense<[2, 3]> : tensor<2xi32>
+  // CHECK: %0 = "tfl.reshape"(%arg0, %cst_0) : (tensor<1x1x2x3xf32>, tensor<2xi32>) -> tensor<2x3xf32>
+  // CHECK: %1 = "tfl.transpose"(%0, %cst) : (tensor<2x3xf32>, tensor<2xi32>) -> tensor<3x2xf32>
+  // CHECK: return
+}
+
+//CHECK-LABEL: @PushTransposeThroughSqueeze2
+func.func @PushTransposeThroughSqueeze2(%arg0: tensor<1x1x2x3xf32>) -> (tensor<2x3xf32>) {
+  %cst = arith.constant dense<[1, 2, 0, 3]> : tensor<4xi32>
+  %0 = "tfl.transpose"(%arg0, %cst) : (tensor<1x1x2x3xf32>, tensor<4xi32>) -> tensor<1x2x1x3xf32>
+  %1 = "tfl.squeeze"(%0) {squeeze_dims = [0, 2]}: (tensor<1x2x1x3xf32>) -> tensor<2x3xf32>
+  return %1 : tensor<2x3xf32>
+
+  // CHECK: %cst = arith.constant dense<[2, 3]> : tensor<2xi32>
+  // CHECK: %0 = "tfl.reshape"(%arg0, %cst) : (tensor<1x1x2x3xf32>, tensor<2xi32>) -> tensor<2x3xf32>
+  // CHECK: return
+}
+
+//CHECK-LABEL: @EliminateBooleanCastCompare
+func.func @EliminateBooleanCastCompare(%arg0: tensor<*xi1>) -> (tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>) {
+  %zero = arith.constant dense<0> : tensor<i32>
+  %cast = "tfl.cast"(%arg0) : (tensor<*xi1>) -> tensor<*xi32>
+
+  %1 = "tfl.equal"(%cast, %zero) : (tensor<*xi32>, tensor<i32>) -> tensor<*xi1>
+  %2 = "tfl.less_equal"(%cast, %zero) : (tensor<*xi32>, tensor<i32>) -> tensor<*xi1>
+  %3 = "tfl.greater_equal"(%cast, %zero) : (tensor<*xi32>, tensor<i32>) -> tensor<*xi1>
+  %4 = "tfl.not_equal"(%cast, %zero) : (tensor<*xi32>, tensor<i32>) -> tensor<*xi1>
+  %5 = "tfl.greater"(%cast, %zero) : (tensor<*xi32>, tensor<i32>) -> tensor<*xi1>
+  %6 = "tfl.less"(%cast, %zero) : (tensor<*xi32>, tensor<i32>) -> tensor<*xi1>
+
+  %7 = "tfl.equal"(%zero, %cast) : (tensor<i32>, tensor<*xi32>) -> tensor<*xi1>
+  %8 = "tfl.less_equal"(%zero, %cast) : (tensor<i32>, tensor<*xi32>) -> tensor<*xi1>
+  %9 = "tfl.greater_equal"(%zero, %cast) : (tensor<i32>, tensor<*xi32>) -> tensor<*xi1>
+  %10 = "tfl.not_equal"(%zero, %cast) : (tensor<i32>, tensor<*xi32>) -> tensor<*xi1>
+  %11 = "tfl.greater"(%zero, %cast) : (tensor<i32>, tensor<*xi32>) -> tensor<*xi1>
+  %12 = "tfl.less"(%zero, %cast) : (tensor<i32>, tensor<*xi32>) -> tensor<*xi1>
+
+  return %1, %2, %3, %4, %5, %6, %7, %8, %9, %10, %11, %12 : tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>
+
+  // CHECK: %0 = "tfl.logical_not"(%arg0) : (tensor<*xi1>) -> tensor<*xi1>
+  // CHECK: %1 = "tfl.logical_not"(%arg0) : (tensor<*xi1>) -> tensor<*xi1>
+  // CHECK: %2 = "tfl.zeros_like"(%arg0) : (tensor<*xi1>) -> tensor<*xi1>
+  // CHECK: %3 = "tfl.logical_not"(%2) : (tensor<*xi1>) -> tensor<*xi1>
+  // CHECK: %4 = "tfl.zeros_like"(%arg0) : (tensor<*xi1>) -> tensor<*xi1>
+  // CHECK: %5 = "tfl.logical_not"(%arg0) : (tensor<*xi1>) -> tensor<*xi1>
+  // CHECK: %6 = "tfl.zeros_like"(%arg0) : (tensor<*xi1>) -> tensor<*xi1>
+  // CHECK: %7 = "tfl.logical_not"(%6) : (tensor<*xi1>) -> tensor<*xi1>
+  // CHECK: %8 = "tfl.logical_not"(%arg0) : (tensor<*xi1>) -> tensor<*xi1>
+  // CHECK: %9 = "tfl.zeros_like"(%arg0) : (tensor<*xi1>) -> tensor<*xi1>
+  // CHECK: return %0, %1, %3, %arg0, %arg0, %4, %5, %7, %8, %arg0, %9, %arg0 : tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>, tensor<*xi1>
 }

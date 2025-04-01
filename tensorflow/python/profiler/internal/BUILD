@@ -148,9 +148,9 @@ cc_library(
     visibility = ["//visibility:private"],
     deps = [
         "//tensorflow/core:lib",
-        "//tensorflow/core/profiler/protobuf:xplane_proto_cc",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/memory",
+        "@local_tsl//tsl/profiler/protobuf:xplane_proto_cc",
         "@local_xla//xla/python/profiler/internal:python_hooks",
         "@pybind11",
     ],
@@ -224,6 +224,7 @@ tsl_pybind_extension(
         "@local_xla//xla/tsl/framework:allocator_registry_impl",
         "@local_xla//xla/tsl/lib/io:table",
         "@local_xla//xla/tsl/platform:env_impl",
+        "@local_xla//xla/tsl/platform:types",
         "@local_xla//xla/tsl/platform/cloud:gcs_file_system",
         "@local_xla//xla/tsl/profiler/backends/cpu:traceme_recorder_impl",
         "@local_xla//xla/tsl/profiler/rpc:profiler_server_impl",
@@ -238,6 +239,7 @@ tsl_pybind_extension(
         "@local_xla//xla/tsl/protobuf:histogram_proto_cc_impl",
         "@local_xla//xla/tsl/protobuf:rpc_options_proto_cc_impl",
         "@local_xla//xla/tsl/protobuf:test_log_proto_cc_impl",
+        "@org_xprof//xprof/pywrap:profiler_plugin_impl",
         "@pybind11",
     ] + if_macos([
         "@local_xla//xla/tsl/lib/histogram",

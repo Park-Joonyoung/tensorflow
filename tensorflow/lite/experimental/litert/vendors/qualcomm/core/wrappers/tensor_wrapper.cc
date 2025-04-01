@@ -3,11 +3,12 @@
 
 #include "tensorflow/lite/experimental/litert/vendors/qualcomm/core/wrappers/tensor_wrapper.h"
 
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <functional>
-#include <iostream>
 #include <limits>
 #include <numeric>
 #include <string>
@@ -15,7 +16,11 @@
 #include <variant>
 #include <vector>
 
+#include "absl/types/span.h"
+#include "third_party/qairt/latest/include/QNN/QnnTypes.h"
 #include "tensorflow/lite/experimental/litert/vendors/qualcomm/core/utils/log.h"
+#include "tensorflow/lite/experimental/litert/vendors/qualcomm/core/utils/miscs.h"
+#include "tensorflow/lite/experimental/litert/vendors/qualcomm/core/wrappers/quantize_params_wrapper.h"
 
 namespace qnn {
 
@@ -87,7 +92,7 @@ TensorWrapper::TensorWrapper(
     const std::vector<std::uint32_t>& dimentions, std::uint32_t bytes,
     const void* data)
     : TensorWrapper(id, tensor_type, data_type, quantize_params, dimentions) {
-  SetTensorData(bytes, data);
+  SetDataBy(bytes, data);
 }
 
 TensorWrapper::TensorWrapper(const TensorWrapper& other)
@@ -140,34 +145,14 @@ Qnn_TensorType_t TensorWrapper::GetTensorType() const {
   return qnn_tensor_.v2.type;
 }
 
-size_t TensorWrapper::GetTensorSize() const {
-  return std::accumulate(GetDims().begin(), GetDims().end(),
-                         GetDataTypeSize(GetDataType()), std::multiplies<>());
+std::uint32_t TensorWrapper::GetTensorNumElements() const {
+  return GetDims().empty() ? 0
+                           : std::accumulate(GetDims().begin(), GetDims().end(),
+                                             1, std::multiplies<>());
 }
 
-void TensorWrapper::SetDataType(Qnn_DataType_t data_type) {
-  qnn_tensor_.v2.dataType = data_type;
-}
-
-void TensorWrapper::SetTensorData(std::uint32_t bytes, const void* data) {
-  if (!IsSubgraphInput() && !IsTensorStatic()) {
-    QNN_LOG_ERROR(
-        "Cannot set tensor data of tensor type other than "
-        "QNN_TENSOR_TYPE_APP_WRITE or QNN_TENSOR_TYPE_STATIC.");
-    return;
-  }
-
-  if (bytes != GetTensorSize()) {
-    QNN_LOG_WARNING("Bytes: %u != TensorSize(): %lu, use TensorSize() instead.",
-                    bytes, GetTensorSize());
-    bytes = GetTensorSize();
-  }
-
-  owned_data_.resize(bytes);
-  std::memcpy(owned_data_.data(), reinterpret_cast<const char*>(data), bytes);
-
-  qnn_tensor_.v2.clientBuf.dataSize = owned_data_.size();
-  qnn_tensor_.v2.clientBuf.data = owned_data_.data();
+size_t TensorWrapper::GetTensorBytes() const {
+  return GetDataTypeSize(GetDataType()) * GetTensorNumElements();
 }
 
 bool TensorWrapper::IsPerTensorQuantWithOffsetDiff(
@@ -213,6 +198,77 @@ bool TensorWrapper::IsPerTensorQuantWithOffsetDiff(
     }
   }
   return false;
+}
+
+void TensorWrapper::SetDataBy(std::uint32_t bytes, const void* data) {
+  if (bytes != GetTensorBytes()) {
+    QNN_LOG_WARNING(
+        "Bytes: %d != GetTensorBytes(): %d, use GetTensorBytes() instead.",
+        bytes, GetTensorBytes());
+    bytes = GetTensorBytes();
+  }
+  owned_data_.resize(bytes);
+  std::memcpy(owned_data_.data(), reinterpret_cast<const char*>(data), bytes);
+  qnn_tensor_.v2.clientBuf.dataSize = owned_data_.size();
+  qnn_tensor_.v2.clientBuf.data = owned_data_.data();
+}
+
+void TensorWrapper::ConvertQint16ToQuint16() {
+  if (GetDataType() != QNN_DATATYPE_SFIXED_POINT_16) {
+    return;
+  }
+
+  // adjust static data
+  if (IsTensorStatic()) {
+    auto int16_data = GetStaticTensorData<std::int16_t>();
+    if (!int16_data.has_value()) {
+      QNN_LOG_ERROR(
+          "Cannot convert static QInt16 data to QUint16 data failed since "
+          "GetStaticTensorData failed.");
+      return;
+    }
+    QNN_LOG_DEBUG("Converting static tensor data from QInt16 to QUint16...");
+    std::vector<std::uint16_t> uint16_data;
+    ConvertDataFromInt16toUInt16((*int16_data), uint16_data);
+    std::memcpy(owned_data_.data(),
+                reinterpret_cast<const char*>(uint16_data.data()),
+                GetTensorBytes());
+    qnn_tensor_.v2.clientBuf.dataSize = owned_data_.size();
+    qnn_tensor_.v2.clientBuf.data = owned_data_.data();
+  }
+
+  // adjust quant param;
+  if (IsPerTensorQuant()) {
+    const auto& q_param =
+        std::get<ScaleOffsetQuantizeParamsWrapper>(GetQuantParams());
+    quantize_params_.emplace<ScaleOffsetQuantizeParamsWrapper>(
+        q_param.GetScale(), q_param.GetZeroPoint() + kUint16ZeroPoint);
+
+  } else if (IsPerChannelQuant()) {
+    const auto& q_param =
+        std::get<AxisScaleOffsetQuantizeParamsWrapper>(GetQuantParams());
+    std::int32_t axis = q_param.GetAxis();
+    std::vector<float> scales;
+    q_param.GetScales(scales);
+    std::vector<std::int32_t> zero_points;
+    q_param.GetZeroPoints(zero_points);
+    std::for_each(zero_points.begin(), zero_points.end(),
+                  [](std::int32_t& val) { val += kUint16ZeroPoint; });
+    quantize_params_.emplace<AxisScaleOffsetQuantizeParamsWrapper>(
+        axis, absl::MakeSpan(scales), absl::MakeSpan(zero_points));
+  }
+
+  std::visit(
+      [this](auto&& quantize_params) -> void {
+        quantize_params.CloneTo(qnn_tensor_.v2.quantizeParams);
+      },
+      quantize_params_);
+
+  // change data type here since GetStaticTensorData checks data type
+  qnn_tensor_.v2.dataType = QNN_DATATYPE_UFIXED_POINT_16;
+  QNN_LOG_DEBUG(
+      "QNN does not fully support QInt16 now, converting to QUint16 for better "
+      "compatibility.");
 }
 
 }  // namespace qnn
